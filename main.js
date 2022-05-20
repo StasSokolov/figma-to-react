@@ -88,7 +88,6 @@ function preprocessTree(node) {
 async function main() {
   let resp = await fetch(`${baseUrl}/v1/files/${fileKey}`, {headers});
   let data = await resp.json();
-
   const doc = data.document;
   const canvas = doc.children[0];
   let html = '';
@@ -128,7 +127,7 @@ async function main() {
   }
 
   const componentMap = {};
-  let contents = `import React, { PureComponent } from 'react';\n`;
+  let contents = `import React from 'react';\n`;
   let nextSection = '';
 
   for (let i=0; i<canvas.children.length; i++) {
@@ -136,12 +135,12 @@ async function main() {
     if (child.name.charAt(0) === '#' && child.visible !== false) {
       const child = canvas.children[i];
       figma.createComponent(child, images, componentMap);
-      nextSection += `export class Master${child.name.replace(/\W+/g, "")} extends PureComponent {\n`;
-      nextSection += "  render() {\n";
-      nextSection += `    return <div className="master" style={{backgroundColor: "${figma.colorString(child.backgroundColor)}"}}>\n`;
+      nextSection += `export const Master${child.name.replace(/\W+/g, "")} = () => {\n`;
+      nextSection += "  return (\n";
+      nextSection += `    <div className="master" style={{backgroundColor: "${figma.colorString(child.backgroundColor)}"}}>\n`;
       nextSection += `      <C${child.name.replace(/\W+/g, "")} {...this.props} nodeId="${child.id}" />\n`;
       nextSection += "    </div>\n";
-      nextSection += "  }\n";
+      nextSection += "  )\n";
       nextSection += "}\n\n";
     }
   }

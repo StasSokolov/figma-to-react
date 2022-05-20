@@ -7,6 +7,10 @@ body {
   min-height: 100%;
 }
 
+button {
+  background-color: transparent;
+}
+
 .master {
   position: absolute;
   overflow: hidden;
