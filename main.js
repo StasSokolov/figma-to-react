@@ -89,16 +89,18 @@ async function main() {
   let resp = await fetch(`${baseUrl}/v1/files/${fileKey}`, {headers});
   let data = await resp.json();
   const doc = data.document;
-  const canvas = doc.children[0];
-  let html = '';
 
-  for (let i=0; i<canvas.children.length; i++) {
-    const child = canvas.children[i]
+  doc.children[0].children.forEach((child) => {
     if (child.name.charAt(0) === '#'  && child.visible !== false) {
-      const child = canvas.children[i];
       preprocessTree(child);
+    } else {
+      child.children.forEach((ch) => {
+        if (ch.name.charAt(0) === '#') {
+          preprocessTree(ch);
+        }
+      })
     }
-  }
+  })
 
   let guids = vectorList.join(',');
   data = await fetch(`${baseUrl}/v1/images/${fileKey}?ids=${guids}&format=svg`, {headers});
@@ -130,20 +132,28 @@ async function main() {
   let contents = `import React from 'react';\n`;
   let nextSection = '';
 
-  for (let i=0; i<canvas.children.length; i++) {
-    const child = canvas.children[i]
-    if (child.name.charAt(0) === '#' && child.visible !== false) {
-      const child = canvas.children[i];
-      figma.createComponent(child, images, componentMap);
-      nextSection += `export const Master${child.name.replace(/\W+/g, "")} = () => {\n`;
-      nextSection += "  return (\n";
-      nextSection += `    <div className="master" style={{backgroundColor: "${figma.colorString(child.backgroundColor)}"}}>\n`;
-      nextSection += `      <C${child.name.replace(/\W+/g, "")} {...this.props} nodeId="${child.id}" />\n`;
-      nextSection += "    </div>\n";
-      nextSection += "  )\n";
-      nextSection += "}\n\n";
-    }
+  const setCurrentElement = (child) => {
+    figma.createComponent(child, images, componentMap);
+    nextSection += `export const Master${child.name.replace(/\W+/g, "")} = () => {\n`;
+    nextSection += "  return (\n";
+    nextSection += `    <div className="master" style={{backgroundColor: "${figma.colorString(child.backgroundColor)}"}}>\n`;
+    nextSection += `      <C${child.name.replace(/\W+/g, "")} {...this.props} nodeId="${child.id}" />\n`;
+    nextSection += "    </div>\n";
+    nextSection += "  )\n";
+    nextSection += "}\n\n";
   }
+
+  doc.children[0].children.forEach((child) => {
+    if (child.name.charAt(0) === '#' && child.visible !== false) {
+      setCurrentElement(child);
+    } else {
+      child.children.forEach((ch) => {
+        if (ch.name.charAt(0) === '#') {
+          setCurrentElement(ch);
+        }
+      })
+    }
+  })
 
   const imported = {};
   for (const key in componentMap) {
